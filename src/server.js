@@ -16,7 +16,7 @@ const server = http.createServer(app);
 const io     = new Server(server, { cors: { origin: '*' } });
 
 const JWT_SECRET = process.env.JWT_SECRET || 'zappo-secret-change-in-prod';
-const PORT       = process.env.PORT || 3000;
+const PORT       = process.env.PORT || 8080;
 
 // ── DATABASE ──────────────────────────────────────────────────
 const db = new Database(path.join(__dirname, '../zappo.db'));
