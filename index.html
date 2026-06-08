@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Zappo ⚡</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="/socket.io/socket.io.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0c0c12;--sb:#13131b;--surf:#1c1c26;--surf2:#24242f;
+  --b1:rgba(255,255,255,.07);--b2:rgba(255,255,255,.13);
+  --acc:#5b52f0;--acc2:#6c64f5;--grn:#22c990;--pnk:#ff6b9d;--red:#e63946;
+  --tx:#eeedf8;--mu:rgba(238,237,248,.45);--mu2:rgba(238,237,248,.22);
+  --fn:'Plus Jakarta Sans',sans-serif
+}
+html,body{height:100%;font-family:var(--fn);background:var(--bg);color:var(--tx);-webkit-font-smoothing:antialiased;overflow:hidden}
+button{font-family:var(--fn);cursor:pointer;border:none;background:none}
+input,textarea{font-family:var(--fn);border:none;outline:none}
+img{display:block;max-width:100%}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:var(--surf2);border-radius:3px}
+
+/* ── SCREENS ── */
+.screen{position:fixed;inset:0;transition:opacity .3s,transform .3s;background:var(--bg)}
+.screen.off{opacity:0;pointer-events:none;transform:scale(.97)}
+
+/* ── AUTH ── */
+#authScreen{display:flex;align-items:center;justify-content:center;overflow-y:auto}
+.acard{background:var(--sb);border:1px solid var(--b2);border-radius:22px;padding:40px 36px;width:100%;max-width:420px;display:flex;flex-direction:column;gap:20px;margin:20px}
+.alogo{display:flex;align-items:center;justify-content:center;gap:10px}
+.amark{width:46px;height:46px;background:var(--acc);border-radius:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 22px rgba(91,82,240,.4);flex-shrink:0}
+.aname{font-size:28px;font-weight:700;letter-spacing:-.5px}
+.aname span{color:var(--acc)}
+.ahd{text-align:center}
+.ahd h2{font-size:20px;font-weight:600;margin-bottom:6px}
+.ahd p{font-size:13px;color:var(--mu);line-height:1.65}
+.fld{display:flex;flex-direction:column;gap:7px}
+.fld label{font-size:11.5px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.6px}
+.fld input{background:var(--surf);border:1.5px solid var(--b2);border-radius:11px;padding:12px 14px;color:var(--tx);font-size:14px;transition:border-color .15s}
+.fld input:focus{border-color:rgba(91,82,240,.6)}
+.fld input::placeholder{color:var(--mu2)}
+.ferr{font-size:12px;color:var(--red);min-height:16px}
+.abtn{background:var(--acc);color:#fff;border-radius:12px;padding:14px;font-size:14px;font-weight:600;width:100%;transition:all .2s;box-shadow:0 4px 16px rgba(91,82,240,.35)}
+.abtn:hover{background:var(--acc2);transform:translateY(-1px)}
+.abtn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.asw{text-align:center;font-size:13px;color:var(--mu)}
+.asw a{color:var(--acc);cursor:pointer;font-weight:500;text-decoration:underline}
+.spin{width:15px;height:15px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .65s linear infinite;display:inline-block;vertical-align:middle;margin-right:7px}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ── APP ── */
+#appScreen{display:flex;flex-direction:row;height:100vh;width:100vw}
+.sb{width:285px;min-width:285px;background:var(--sb);display:flex;flex-direction:column;border-right:1px solid var(--b1);transition:transform .25s}
+.sbh{padding:17px 14px 13px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--b1)}
+.logo{display:flex;align-items:center;gap:8px}
+.logo-m{width:30px;height:30px;background:var(--acc);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-t{font-size:17px;font-weight:700;letter-spacing:-.4px}
+.logo-t span{color:var(--acc)}
+.sbb{display:flex;gap:3px}
+.ib{width:30px;height:30px;color:var(--mu);border-radius:8px;display:flex;align-items:center;justify-content:center;transition:all .15s;cursor:pointer}
+.ib:hover{background:var(--surf);color:var(--tx)}
+.ib svg{width:17px;height:17px;flex-shrink:0}
+.srch{padding:11px 13px 9px}
+.srchb{background:var(--surf);border:1px solid var(--b1);border-radius:10px;display:flex;align-items:center;gap:7px;padding:8px 11px}
+.srchb:focus-within{border-color:rgba(91,82,240,.4)}
+.srchb svg{width:14px;height:14px;color:var(--mu);flex-shrink:0}
+.srchb input{background:none;color:var(--tx);font-size:13px;width:100%}
+.srchb input::placeholder{color:var(--mu2)}
+.tabs{display:flex;padding:0 13px 10px;gap:5px}
+.tab{font-size:11.5px;font-weight:500;padding:5px 12px;border-radius:20px;color:var(--mu);transition:all .15s;cursor:pointer}
+.tab.on{background:var(--acc);color:#fff}
+.tab:hover:not(.on){background:var(--surf);color:var(--tx)}
+.clist{flex:1;overflow-y:auto}
+.ci{display:flex;align-items:center;gap:10px;padding:10px 13px;cursor:pointer;transition:background .12s;position:relative}
+.ci:hover{background:rgba(255,255,255,.03)}
+.ci.act{background:rgba(91,82,240,.12)}
+.ci.act::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:3px;background:var(--acc);border-radius:0 3px 3px 0}
+.av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex-shrink:0;position:relative}
+.odot{position:absolute;width:11px;height:11px;background:var(--grn);border-radius:50%;bottom:1px;right:1px;border:2px solid var(--sb)}
+.ci-info{flex:1;min-width:0}
+.ci-n{font-size:13.5px;font-weight:500;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ci-p{font-size:12px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ci-m{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.ci-t{font-size:11px;color:var(--mu2)}
+.bdg{background:var(--acc);color:#fff;border-radius:10px;font-size:10px;font-weight:600;min-width:17px;height:17px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+.no-chats{padding:30px 14px;text-align:center;color:var(--mu2);font-size:13px;line-height:1.75}
+.sbf{padding:11px 13px;border-top:1px solid var(--b1);display:flex;align-items:center;gap:9px}
+.mav{width:34px;height:34px;border-radius:50%;background:var(--acc);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
+.minfo{flex:1;min-width:0}
+.mname{font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msub{font-size:11px;color:var(--grn)}
+
+/* ── CHAT AREA ── */
+.ca{flex:1;display:flex;flex-direction:column;min-width:0;position:relative;background:var(--bg)}
+.cabg{position:absolute;inset:0;background-image:radial-gradient(circle,rgba(91,82,240,.04) 1px,transparent 1px);background-size:26px 26px;pointer-events:none;z-index:0}
+.topb{padding:13px 16px;border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:11px;background:rgba(12,12,18,.96);backdrop-filter:blur(10px);z-index:2;position:relative;min-height:62px}
+.tav{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;position:relative}
+.tav .odot{border-color:rgba(12,12,18,.96)}
+.ti{flex:1}
+.tn{font-size:14px;font-weight:600}
+.ts{font-size:11.5px;margin-top:1px}
+.ts.on{color:var(--grn)}.ts.off{color:var(--mu)}
+.tacts{display:flex;gap:3px}
+
+/* ── MESSAGES ── */
+.msgs{flex:1;overflow-y:auto;padding:15px 18px;display:flex;flex-direction:column;gap:3px;position:relative;z-index:1}
+.dlbl{text-align:center;font-size:11px;color:var(--mu2);margin:8px 0 5px;display:flex;align-items:center;gap:9px}
+.dlbl::before,.dlbl::after{content:'';flex:1;height:1px;background:var(--b1)}
+.mr{display:flex;align-items:flex-end;gap:7px;animation:fu .18s ease}
+.mr.out{flex-direction:row-reverse}
+@keyframes fu{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.mav2{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;flex-shrink:0}
+.bub{max-width:62%;padding:9px 13px;border-radius:15px;font-size:13.5px;line-height:1.6;word-break:break-word}
+.bub.in{background:var(--surf);border:1px solid var(--b1);border-bottom-left-radius:3px}
+.bub.out{background:var(--acc);color:#fff;border-bottom-right-radius:3px}
+.bm{display:flex;align-items:center;gap:4px;margin-top:4px;font-size:10.5px}
+.bub.in .bm{color:var(--mu)}.bub.out .bm{color:rgba(255,255,255,.5);justify-content:flex-end}
+.bm svg{width:14px;height:14px}
+/* GIF bubble */
+.bub.gif-bub,.bub.sticker-bub{background:none!important;border:none!important;padding:0!important}
+.bub.gif-bub img,.bub.sticker-bub img{border-radius:12px;max-width:220px;max-height:200px;object-fit:cover;cursor:pointer}
+.bub.sticker-bub img{max-width:140px;max-height:140px;object-fit:contain;background:none}
+/* typing */
+.trow{display:flex;align-items:center;gap:7px;animation:fu .18s ease}
+.tbub{background:var(--surf);border:1px solid var(--b1);border-radius:15px;border-bottom-left-radius:3px;padding:10px 14px;display:flex;gap:5px}
+.td{width:7px;height:7px;border-radius:50%;background:var(--mu);animation:tda 1.3s infinite}
+.td:nth-child(2){animation-delay:.2s}.td:nth-child(3){animation-delay:.4s}
+@keyframes tda{0%,60%,100%{transform:translateY(0);background:var(--mu)}30%{transform:translateY(-6px);background:var(--acc)}}
+
+/* ── INPUT BAR ── */
+.ibar{padding:11px 14px;display:flex;align-items:flex-end;gap:9px;border-top:1px solid var(--b1);background:rgba(12,12,18,.96);z-index:2;position:relative}
+.att{width:36px;height:36px;background:var(--surf);color:var(--mu);border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;cursor:pointer}
+.att:hover{background:var(--surf2);color:var(--tx)}
+.att svg{width:17px;height:17px}
+.att.on{background:rgba(91,82,240,.25);color:var(--acc)}
+.iw{flex:1;background:var(--surf);border:1px solid var(--b1);border-radius:20px;display:flex;align-items:flex-end;padding:8px 12px;gap:8px;transition:border-color .15s}
+.iw:focus-within{border-color:rgba(91,82,240,.45)}
+.mi{flex:1;background:none;color:var(--tx);font-size:13.5px;resize:none;max-height:100px;line-height:1.55}
+.mi::placeholder{color:var(--mu2)}
+.emj{background:none;color:var(--mu);font-size:19px;transition:color .15s;flex-shrink:0;line-height:1;cursor:pointer}
+.emj:hover{color:var(--pnk)}
+.snd{width:38px;height:38px;background:var(--acc);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;box-shadow:0 4px 12px rgba(91,82,240,.35);cursor:pointer}
+.snd:hover{background:var(--acc2);transform:scale(1.06)}
+.snd:active{transform:scale(.93)}
+.snd svg{width:17px;height:17px}
+
+/* ── EMOJI PICKER ── */
+.epick{position:absolute;bottom:66px;right:18px;background:var(--sb);border:1px solid var(--b2);border-radius:14px;padding:12px;display:none;flex-direction:column;gap:10px;width:320px;z-index:20;box-shadow:0 8px 28px rgba(0,0,0,.5);max-height:380px}
+.epick.open{display:flex}
+.epick-tabs{display:flex;gap:6px;border-bottom:1px solid var(--b1);padding-bottom:10px}
+.ep-tab{font-size:12px;font-weight:500;padding:5px 10px;border-radius:8px;cursor:pointer;color:var(--mu);transition:all .15s}
+.ep-tab.on{background:var(--acc);color:#fff}
+.ep-tab:hover:not(.on){background:var(--surf2);color:var(--tx)}
+.ep-body{overflow-y:auto;flex:1}
+.emoji-grid{display:flex;flex-wrap:wrap;gap:2px}
+.eitem{font-size:22px;padding:4px;border-radius:7px;cursor:pointer;transition:background .1s;line-height:1}
+.eitem:hover{background:var(--surf2)}
+/* sticker grid */
+.sticker-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.sticker-item{cursor:pointer;border-radius:10px;overflow:hidden;transition:transform .15s;background:var(--surf);padding:4px;display:flex;align-items:center;justify-content:center}
+.sticker-item:hover{transform:scale(1.06)}
+.sticker-item img{width:70px;height:70px;object-fit:contain}
+/* gif grid */
+.gif-search{background:var(--surf);border:1px solid var(--b2);border-radius:9px;padding:8px 11px;color:var(--tx);font-size:13px;width:100%;margin-bottom:8px}
+.gif-search::placeholder{color:var(--mu2)}
+.gif-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.gif-item{cursor:pointer;border-radius:8px;overflow:hidden;transition:transform .15s;background:var(--surf);aspect-ratio:16/9;display:flex;align-items:center;justify-content:center}
+.gif-item:hover{transform:scale(1.03)}
+.gif-item img{width:100%;height:100%;object-fit:cover}
+.gif-loading{text-align:center;color:var(--mu);font-size:13px;padding:20px}
+
+/* ── MODALS ── */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:50;display:flex;align-items:center;justify-content:center;animation:fi .2s}
+.ov.off{display:none}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+.modal{background:var(--sb);border:1px solid var(--b2);border-radius:18px;padding:26px 22px;width:100%;max-width:360px;display:flex;flex-direction:column;gap:15px;margin:16px}
+.mh{display:flex;align-items:center;justify-content:space-between}
+.mh h3{font-size:16px;font-weight:600}
+.mclose{width:28px;height:28px;background:var(--surf2);border-radius:8px;color:var(--mu);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.mclose svg{width:16px;height:16px}
+.mbtn{background:var(--acc);color:#fff;border-radius:11px;padding:12px;font-size:14px;font-weight:600;width:100%;transition:all .15s;cursor:pointer}
+.mbtn:hover{background:var(--acc2)}
+.mbtn:disabled{opacity:.6;cursor:not-allowed}
+.merr{color:var(--red);font-size:12px;min-height:15px}
+.minfo{font-size:13px;color:var(--mu);line-height:1.65}
+
+/* ── EMPTY STATE ── */
+.empty-ca{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--mu2);z-index:1;position:relative;padding:24px;text-align:center}
+.empty-ca svg{width:52px;height:52px;color:rgba(91,82,240,.3)}
+.empty-ca h3{font-size:15px;font-weight:500;color:var(--mu)}
+.empty-ca p{font-size:13px;max-width:260px;line-height:1.7}
+.ebtn{background:var(--acc);color:#fff;border-radius:10px;padding:10px 22px;font-size:13px;font-weight:600;margin-top:4px;transition:all .15s;cursor:pointer}
+.ebtn:hover{background:var(--acc2)}
+
+/* ── TOAST ── */
+.toast{position:fixed;top:18px;left:50%;transform:translateX(-50%) translateY(-70px);background:var(--surf2);border:1px solid var(--b2);border-left:3px solid var(--grn);border-radius:10px;padding:10px 17px;font-size:13px;font-weight:500;transition:transform .32s cubic-bezier(.34,1.56,.64,1);z-index:999;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.5);pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.err{border-left-color:var(--red)}
+
+/* ── MOBILE ── */
+@media(max-width:700px){
+  .sb{position:fixed;top:0;left:0;bottom:0;z-index:40;transform:translateX(-100%);box-shadow:4px 0 20px rgba(0,0,0,.5)}
+  .sb.open{transform:translateX(0)}
+  .mob{display:flex!important}
+  .bub{max-width:82%}
+  .epick{width:calc(100vw - 28px);right:14px}
+}
+.mob{display:none}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ AUTH ═══════════ -->
+<div class="screen" id="authScreen">
+<div class="acard">
+  <div class="alogo">
+    <div class="amark">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+    </div>
+    <span class="aname">Zap<span>po</span></span>
+  </div>
+  <div class="ahd">
+    <h2 id="authH">Sign in to Zappo</h2>
+    <p id="authP">Real messages delivered to any device, anywhere.</p>
+  </div>
+  <div class="fld" id="nameRow" style="display:none">
+    <label>Your name</label>
+    <input id="authName" type="text" placeholder="e.g. Rahul Sharma" autocomplete="name"/>
+  </div>
+  <div class="fld">
+    <label>Username <span style="color:var(--mu2);font-size:10px;text-transform:none;font-weight:400">(share this so friends can message you)</span></label>
+    <input id="authUser" type="text" placeholder="e.g. rahul or mum_123" autocomplete="username" oninput="san(this)" onkeydown="ekey(event)"/>
+  </div>
+  <div class="fld">
+    <label>Password</label>
+    <input id="authPass" type="password" placeholder="minimum 6 characters" autocomplete="current-password" onkeydown="ekey(event)"/>
+  </div>
+  <div class="ferr" id="authErr"></div>
+  <button class="abtn" id="authBtn" onclick="doAuth()">Sign in →</button>
+  <div class="asw" id="authSw">No account? <a onclick="toggleMode()">Create one free</a></div>
+</div>
+</div>
+
+<!-- ═══════════ APP ═══════════ -->
+<div class="screen off" id="appScreen" style="display:flex">
+
+  <div class="sb" id="sb">
+    <div class="sbh">
+      <div class="logo">
+        <div class="logo-m"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+        <span class="logo-t">Zap<span>po</span></span>
+      </div>
+      <div class="sbb">
+        <button class="ib" title="New chat" onclick="openNC()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="12" y1="8" x2="12" y2="14"/><line x1="9" y1="11" x2="15" y2="11"/></svg>
+        </button>
+        <button class="ib" title="Copy your username" onclick="copyMe()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+        <button class="ib" title="Sign out" onclick="signOut()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="srch"><div class="srchb">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search chats…" oninput="filterC(this.value)" id="srchIn"/>
+    </div></div>
+    <div class="tabs">
+      <button class="tab on" onclick="setTab(this,'all')">All</button>
+      <button class="tab" onclick="setTab(this,'unread')">Unread</button>
+    </div>
+    <div class="clist" id="clist"><div class="no-chats">Loading…</div></div>
+    <div class="sbf">
+      <div class="mav" id="myAv"></div>
+      <div class="minfo"><div class="mname" id="myName">–</div><div class="msub" id="myHandle">● Active</div></div>
+    </div>
+  </div>
+
+  <div class="ca" id="chatArea">
+    <div class="cabg"></div>
+    <div class="topb" id="topb">
+      <button class="ib mob" onclick="document.getElementById('sb').classList.toggle('open')" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div id="topContent" style="flex:1;display:flex;align-items:center;gap:10px;color:var(--mu);font-size:13px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(91,82,240,0.4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Select or start a chat
+      </div>
+    </div>
+    <div class="msgs" id="msgs">
+      <div class="empty-ca">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <h3>Welcome to Zappo ⚡</h3>
+        <p>Messages you send reach your contact on <b>any device, any browser, anywhere</b> — as long as both of you are on Zappo.</p>
+        <button class="ebtn" onclick="openNC()">+ Start a chat</button>
+      </div>
+    </div>
+    <div class="ibar">
+      <button class="att" id="attachBtn" title="Attach file" onclick="showToast('📎 File sharing coming soon!')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+      </button>
+      <div class="iw">
+        <textarea class="mi" id="msgIn" rows="1" placeholder="Type a message… (Enter to send)" onkeydown="handleKey(event)" oninput="onTyping();grow(this)"></textarea>
+        <button class="emj" id="emjBtn" onclick="toggleEmoji()" title="Emoji / Stickers / GIFs">😊</button>
+      </div>
+      <button class="snd" onclick="sendText()" title="Send">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+
+    <!-- EMOJI / STICKER / GIF PANEL -->
+    <div class="epick" id="epick">
+      <div class="epick-tabs">
+        <button class="ep-tab on" onclick="setEpTab('emoji',this)">😊 Emoji</button>
+        <button class="ep-tab" onclick="setEpTab('sticker',this)">🎭 Stickers</button>
+        <button class="ep-tab" onclick="setEpTab('gif',this)">🎞️ GIFs</button>
+      </div>
+      <div class="ep-body" id="epBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- NEW CHAT MODAL -->
+<div class="ov off" id="ncOv" onclick="if(event.target===this)closeNC()">
+  <div class="modal">
+    <div class="mh"><h3>New Chat</h3><button class="mclose" onclick="closeNC()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="minfo">Enter the <b style="color:var(--tx)">username</b> of the person you want to message. They must have a Zappo account on this server.</div>
+    <div class="fld"><label>Their username</label><input id="ncUser" type="text" placeholder="e.g. mum or brother_ravi" oninput="san(this)" onkeydown="if(event.key==='Enter')startChat()"/></div>
+    <div class="merr" id="ncErr"></div>
+    <button class="mbtn" id="ncBtn" onclick="startChat()">Open Chat →</button>
+  </div>
+</div>
+
+<div class="toast" id="toastEl"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  ZAPPO CLIENT — connects to Node.js + Socket.io backend
+//  Real cross-device, cross-browser messaging
+// ══════════════════════════════════════════════════════════════
+
+const API = '';  // same origin
+let token = localStorage.getItem('zp_token');
+let ME    = JSON.parse(localStorage.getItem('zp_me') || 'null');
+let socket = null;
+let activeConv = null;
+let curTab = 'all';
+let convs  = [];
+let typingTmr = null;
+let toastTmr  = null;
+let isSignUp  = false;
+let epTab = 'emoji';
+let gifTimer = null;
+
+// ══════════════════════════════════════════════════════════════
+//  SOCKET
+// ══════════════════════════════════════════════════════════════
+function connectSocket() {
+  if (socket) socket.disconnect();
+  socket = io({ auth: { token } });
+
+  socket.on('new_message', (msg) => {
+    // Update conv list
+    const ci = convs.findIndex(c => c.id === msg.conv_id);
+    if (ci >= 0) {
+      convs[ci].last_msg = msg.type === 'gif' ? '🎞️ GIF' : msg.type === 'sticker' ? '🎭 Sticker' : msg.content;
+      convs[ci].last_at  = msg.created_at;
+      if (msg.sender_id !== ME.id && activeConv?.id !== msg.conv_id)
+        convs[ci].unread = (convs[ci].unread || 0) + 1;
+      convs.unshift(...convs.splice(ci, 1));
+    } else {
+      loadConvs();
+    }
+    renderList();
+    if (activeConv?.id === msg.conv_id) appendMsg(msg);
+    else if (msg.sender_id !== ME.id) showToast('💬 ' + msg.sender_name + ': ' + (msg.type === 'gif' ? '🎞️ GIF' : msg.type === 'sticker' ? '🎭 Sticker' : msg.content.slice(0,50)));
+  });
+
+  socket.on('typing_start', ({ convId }) => { if (activeConv?.id === convId) showTyping(); });
+  socket.on('typing_stop',  ({ convId }) => { if (activeConv?.id === convId) hideTyping(); });
+
+  socket.on('presence', ({ userId, online }) => {
+    convs.forEach(c => { if (c.other?.id === userId) c.other.online = online; });
+    renderList();
+    if (activeConv?.other?.id === userId) renderTopbar(activeConv);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════════════════════════════
+function toggleMode() {
+  isSignUp = !isSignUp;
+  document.getElementById('authH').textContent  = isSignUp ? 'Create your account' : 'Sign in to Zappo';
+  document.getElementById('authP').textContent  = isSignUp ? 'Pick a username. Your contacts will use it to find you.' : 'Real messages delivered to any device, anywhere.';
+  document.getElementById('authBtn').textContent = isSignUp ? 'Create account →' : 'Sign in →';
+  document.getElementById('nameRow').style.display = isSignUp ? 'flex' : 'none';
+  document.getElementById('authSw').innerHTML = isSignUp
+    ? 'Already have an account? <a onclick="toggleMode()">Sign in</a>'
+    : 'No account? <a onclick="toggleMode()">Create one free</a>';
+  document.getElementById('authErr').textContent = '';
+}
+
+async function doAuth() {
+  const name = document.getElementById('authName').value.trim();
+  const user = document.getElementById('authUser').value.trim().toLowerCase();
+  const pass = document.getElementById('authPass').value;
+  const errEl = document.getElementById('authErr');
+  const btn   = document.getElementById('authBtn');
+  errEl.textContent = '';
+
+  if (!user || user.length < 2) { errEl.textContent = 'Username must be at least 2 characters.'; return; }
+  if (!/^[a-z0-9_]+$/.test(user)) { errEl.textContent = 'Only letters, numbers and _ allowed.'; return; }
+  if (!pass || pass.length < 6)  { errEl.textContent = 'Password must be at least 6 characters.'; return; }
+  if (isSignUp && !name)          { errEl.textContent = 'Enter your name.'; return; }
+
+  btn.innerHTML = '<span class="spin"></span>Please wait…'; btn.disabled = true;
+
+  const endpoint = isSignUp ? '/api/register' : '/api/login';
+  const body = isSignUp ? { username: user, name, password: pass } : { username: user, password: pass };
+
+  try {
+    const r = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const d = await r.json();
+    if (!r.ok) { errEl.textContent = d.error || 'Something went wrong.'; btn.innerHTML = isSignUp ? 'Create account →' : 'Sign in →'; btn.disabled = false; return; }
+    token = d.token; ME = d.user;
+    localStorage.setItem('zp_token', token);
+    localStorage.setItem('zp_me', JSON.stringify(ME));
+    enterApp();
+  } catch {
+    errEl.textContent = 'Cannot connect to server. Make sure the server is running.';
+    btn.innerHTML = isSignUp ? 'Create account →' : 'Sign in →'; btn.disabled = false;
+  }
+}
+
+function enterApp() {
+  document.getElementById('myAv').textContent   = ini(ME.name);
+  document.getElementById('myName').textContent = ME.name;
+  document.getElementById('myHandle').textContent = '● @' + ME.username;
+  const as = document.getElementById('authScreen');
+  as.classList.add('off');
+  setTimeout(() => { as.style.display = 'none'; document.getElementById('appScreen').classList.remove('off'); }, 300);
+  connectSocket();
+  loadConvs();
+  showToast('👋 Welcome, ' + ME.name.split(' ')[0] + '!');
+}
+
+function signOut() {
+  if (socket) socket.disconnect();
+  token = null; ME = null; activeConv = null; convs = [];
+  localStorage.removeItem('zp_token'); localStorage.removeItem('zp_me');
+  document.getElementById('appScreen').classList.add('off');
+  const as = document.getElementById('authScreen'); as.style.display = 'flex'; as.classList.remove('off');
+  document.getElementById('authUser').value = ''; document.getElementById('authPass').value = '';
+  document.getElementById('msgs').innerHTML = emptyHTML();
+  document.getElementById('topContent').innerHTML = emptyTop();
+  if (isSignUp) toggleMode();
+}
+
+// ══════════════════════════════════════════════════════════════
+//  CONVERSATIONS
+// ══════════════════════════════════════════════════════════════
+async function loadConvs() {
+  try {
+    const r = await apiFetch('/api/conversations');
+    convs = r;
+    renderList();
+  } catch { showToast('Failed to load chats', true); }
+}
+
+function renderList(filter = '') {
+  const el = document.getElementById('clist');
+  let items = [...convs];
+  if (curTab === 'unread') items = items.filter(c => c.unread > 0);
+  if (filter) { const f = filter.toLowerCase(); items = items.filter(c => (c.other?.name || '').toLowerCase().includes(f) || (c.other?.username || '').includes(f)); }
+  if (!items.length) { el.innerHTML = '<div class="no-chats">No chats yet.<br/>Tap <b>+</b> to message someone.</div>'; return; }
+  el.innerHTML = items.map(c => {
+    const ou = c.other || {};
+    const col = pal(c.id);
+    return `<div class="ci${activeConv?.id===c.id?' act':''}" onclick="openConv('${c.id}')">
+      <div class="av" style="background:${col.bg};color:${col.c};">${ini(ou.name||'?')}${ou.online?'<div class="odot"></div>':''}</div>
+      <div class="ci-info"><div class="ci-n">${esc(ou.name||'?')} <span style="font-size:11px;color:var(--mu2)">@${esc(ou.username||'')}</span></div><div class="ci-p">${esc(c.last_msg||'No messages yet')}</div></div>
+      <div class="ci-m"><span class="ci-t">${ago(c.last_at)}</span>${c.unread>0?`<span class="bdg">${c.unread}</span>`:''}</div>
+    </div>`;
+  }).join('');
+}
+
+function filterC(v) { renderList(v); }
+function setTab(el, t) { document.querySelectorAll('.tab').forEach(b => b.classList.remove('on')); el.classList.add('on'); curTab = t; renderList(); }
+
+// ══════════════════════════════════════════════════════════════
+//  OPEN CONVERSATION
+// ══════════════════════════════════════════════════════════════
+async function openConv(id) {
+  activeConv = convs.find(c => c.id === id);
+  if (!activeConv) return;
+  convs.find(c => c.id === id).unread = 0;
+  renderList(); renderTopbar(activeConv);
+  document.getElementById('sb').classList.remove('open');
+  document.getElementById('msgs').innerHTML = '<div class="dlbl">Today</div>';
+  try {
+    const msgs = await apiFetch(`/api/conversations/${id}/messages`);
+    document.getElementById('msgs').innerHTML = '<div class="dlbl">Today</div>';
+    msgs.forEach(m => appendMsg(m, false));
+    document.getElementById('msgs').scrollTop = 99999;
+  } catch { showToast('Could not load messages', true); }
+  apiFetch(`/api/conversations/${id}/read`, 'POST');
+  document.getElementById('msgIn').focus();
+}
+
+function renderTopbar(c) {
+  const ou  = c.other || {};
+  const col = pal(c.id);
+  document.getElementById('topContent').innerHTML = `
+    <div class="tav" style="background:${col.bg};color:${col.c};">${ini(ou.name||'?')}${ou.online?'<div class="odot" style="border-color:rgba(12,12,18,.96)"></div>':''}</div>
+    <div class="ti"><div class="tn">${esc(ou.name||'?')} <span style="font-size:12px;color:var(--mu2)">@${esc(ou.username||'')}</span></div>
+    <div class="ts ${ou.online?'on':'off'}">${ou.online?'● online':'● offline'}</div></div>
+    <div class="tacts">
+      <button class="ib" title="Voice call (coming soon)" onclick="showToast('📞 Voice calls coming soon!')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07C9.44 18.29 7.74 16.59 6.59 14.68a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 5.5 4h3a2 2 0 0 1 2 1.72c.128.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L9.91 11a16 16 0 0 0 6.29 6.29l1.36-.83a2 2 0 0 1 2.11-.45c.907.339 1.85.572 2.81.7A2 2 0 0 1 22 18.92z"/></svg>
+      </button>
+      <button class="ib" title="Video call (coming soon)" onclick="showToast('🎥 Video calls coming soon!')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+      </button>
+      <button class="ib" title="More" onclick="showToast('More options coming soon!')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+      </button>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  MESSAGES
+// ══════════════════════════════════════════════════════════════
+function appendMsg(m, scroll = true) {
+  const con = document.getElementById('msgs');
+  const isMe = m.sender_id === ME.id;
+  const col  = pal(m.conv_id || activeConv?.id || '');
+  const row  = document.createElement('div');
+  row.className = 'mr ' + (isMe ? 'out' : 'in');
+  if (!isMe) {
+    const av = document.createElement('div'); av.className = 'mav2';
+    av.style.cssText = `background:${col.bg};color:${col.c};`;
+    av.textContent = ini(m.sender_name || '?'); row.appendChild(av);
+  }
+  const bub = document.createElement('div');
+  const ts  = m.created_at ? new Date(m.created_at * 1000).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+
+  if (m.type === 'gif') {
+    bub.className = 'bub gif-bub ' + (isMe ? 'out' : 'in');
+    bub.innerHTML = `<img src="${esc(m.content)}" alt="GIF" loading="lazy" onclick="window.open('${esc(m.content)}','_blank')"/><div class="bm"><span>${ts}</span>${isMe?tick:''}</div>`;
+  } else if (m.type === 'sticker') {
+    bub.className = 'bub sticker-bub ' + (isMe ? 'out' : 'in');
+    bub.innerHTML = `<img src="${esc(m.content)}" alt="Sticker" loading="lazy"/><div class="bm"><span>${ts}</span>${isMe?tick:''}</div>`;
+  } else {
+    bub.className = 'bub ' + (isMe ? 'out' : 'in');
+    bub.innerHTML = `<div>${esc(m.content)}</div><div class="bm"><span>${ts}</span>${isMe?tick:''}</div>`;
+  }
+  row.appendChild(bub); con.appendChild(row);
+  if (scroll) con.scrollTop = 99999;
+}
+
+const tick = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 7 9.5 15.5 6 12"/><polyline points="22 7 13.5 15.5 10 12"/></svg>`;
+
+function showTyping() {
+  if (document.getElementById('typr')) return;
+  const con = document.getElementById('msgs'); const col = pal(activeConv?.id || '');
+  const row = document.createElement('div'); row.className = 'trow'; row.id = 'typr';
+  const av = document.createElement('div'); av.className = 'mav2';
+  av.style.cssText = `background:${col.bg};color:${col.c};`;
+  av.textContent = ini(activeConv?.other?.name || '?'); row.appendChild(av);
+  const b = document.createElement('div'); b.className = 'tbub';
+  b.innerHTML = '<div class="td"></div><div class="td"></div><div class="td"></div>';
+  row.appendChild(b); con.appendChild(row); con.scrollTop = 99999;
+}
+function hideTyping() { document.getElementById('typr')?.remove(); }
+
+// ══════════════════════════════════════════════════════════════
+//  SEND
+// ══════════════════════════════════════════════════════════════
+async function send(type, content) {
+  if (!activeConv || !content) return;
+  clearTimeout(typingTmr); socket?.emit('typing_stop', { convId: activeConv.id });
+  try {
+    await apiFetch(`/api/conversations/${activeConv.id}/messages`, 'POST', { type, content });
+  } catch { showToast('Failed to send message', true); }
+}
+
+function sendText() {
+  const inp = document.getElementById('msgIn'); const t = inp.value.trim();
+  if (!t) return; inp.value = ''; inp.style.height = 'auto'; send('text', t);
+}
+
+function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendText(); } }
+function grow(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 100) + 'px'; }
+
+function onTyping() {
+  if (!activeConv) return;
+  socket?.emit('typing_start', { convId: activeConv.id });
+  clearTimeout(typingTmr); typingTmr = setTimeout(() => socket?.emit('typing_stop', { convId: activeConv.id }), 3000);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  NEW CHAT MODAL
+// ══════════════════════════════════════════════════════════════
+function openNC()  { document.getElementById('ncOv').classList.remove('off'); document.getElementById('ncUser').focus(); }
+function closeNC() { document.getElementById('ncOv').classList.add('off'); document.getElementById('ncUser').value = ''; document.getElementById('ncErr').textContent = ''; }
+
+async function startChat() {
+  const username = document.getElementById('ncUser').value.trim().toLowerCase();
+  const errEl = document.getElementById('ncErr'); const btn = document.getElementById('ncBtn');
+  errEl.textContent = '';
+  if (!username) { errEl.textContent = 'Enter a username.'; return; }
+  if (username === ME.username) { errEl.textContent = "That's your own username!"; return; }
+  btn.disabled = true; btn.textContent = 'Searching…';
+  try {
+    const other = await apiFetch('/api/users/find?username=' + encodeURIComponent(username));
+    const conv  = await apiFetch('/api/conversations', 'POST', { otherUserId: other.id });
+    closeNC();
+    await loadConvs();
+    await openConv(conv.id);
+    showToast('✅ Chat opened with ' + other.name + ' (@' + other.username + ')');
+  } catch (e) {
+    errEl.textContent = e.message || 'User not found.';
+  }
+  btn.disabled = false; btn.textContent = 'Open Chat →';
+}
+
+// ══════════════════════════════════════════════════════════════
+//  EMOJI / STICKER / GIF PANEL
+// ══════════════════════════════════════════════════════════════
+const EMOJIS = ['😀','😁','😂','🤣','😍','🥰','😘','😎','🤔','😭','🥺','😤','😡','🤯','🥳','🤩','😴','🤐','🤢','🤧','😷','🥴','😵','🤠','😈','👻','🤖','👽','💀','❤️','🧡','💛','💚','💙','💜','🖤','🤍','🔥','⚡','✨','🎉','🎊','🎁','🏆','🎯','💯','✅','❌','⭐','🌈','🌸','🍕','🍔','🍦','☕','🎵','🎶','👍','👎','🙌','👏','🤝','🫶','💪','🙏','🤞','✌️','🤙','👋','🫡','🚀','🌍','🏠','💻','📱','🎮','🎬','📚','💰','🔑'];
+
+// Built-in sticker packs (using free emoji images from Twemoji CDN)
+const STICKER_PACKS = [
+  {name:'Happy',emojis:['1f600','1f601','1f602','1f923','1f60a','1f60d','1f618','1f917']},
+  {name:'Sad',emojis:['1f622','1f625','1f62d','1f614','1f61e','1f62b','1f630','1f975']},
+  {name:'Reactions',emojis:['1f44d','1f44e','2764','1f525','1f4af','2705','274c','1f4a5']},
+  {name:'Animals',emojis:['1f436','1f431','1f430','1f43b','1f42e','1f434','1f418','1f98b']},
+];
+const TWEMOJI = (code) => `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/${code}.png`;
+
+function setEpTab(tab, btn) {
+  epTab = tab;
+  document.querySelectorAll('.ep-tab').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  renderEpBody();
+}
+
+function renderEpBody() {
+  const body = document.getElementById('epBody');
+  if (epTab === 'emoji') {
+    body.innerHTML = `<div class="emoji-grid">${EMOJIS.map(e => `<span class="eitem" onclick="insEmoji('${e}')">${e}</span>`).join('')}</div>`;
+  } else if (epTab === 'sticker') {
+    body.innerHTML = STICKER_PACKS.map(pack => `
+      <div style="margin-bottom:12px;">
+        <div style="font-size:11px;font-weight:600;color:var(--mu);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">${pack.name}</div>
+        <div class="sticker-grid">
+          ${pack.emojis.map(code => `
+            <div class="sticker-item" onclick="sendSticker('${TWEMOJI(code)}')">
+              <img src="${TWEMOJI(code)}" alt="sticker" loading="lazy"/>
+            </div>`).join('')}
+        </div>
+      </div>`).join('');
+  } else if (epTab === 'gif') {
+    body.innerHTML = `
+      <input class="gif-search" id="gifSearch" placeholder="Search GIFs (e.g. happy, love, funny)…" oninput="gifSearchDebounce(this.value)"/>
+      <div id="gifGrid" class="gif-grid"><div class="gif-loading">🎞️ Loading trending GIFs…</div></div>`;
+    loadGifs('');
+  }
+}
+
+function toggleEmoji() {
+  const p = document.getElementById('epick');
+  p.classList.toggle('open');
+  if (p.classList.contains('open') && !document.getElementById('epBody').children.length) {
+    renderEpBody();
+  }
+}
+
+function insEmoji(e) {
+  const inp = document.getElementById('msgIn'), pos = inp.selectionStart;
+  inp.value = inp.value.slice(0, pos) + e + inp.value.slice(pos);
+  inp.selectionStart = inp.selectionEnd = pos + e.length;
+  inp.focus();
+  document.getElementById('epick').classList.remove('open');
+}
+
+function sendSticker(url) {
+  document.getElementById('epick').classList.remove('open');
+  send('sticker', url);
+}
+
+async function loadGifs(query) {
+  const grid = document.getElementById('gifGrid');
+  if (!grid) return;
+  grid.innerHTML = '<div class="gif-loading"><span class="spin" style="border-top-color:var(--acc)"></span> Loading…</div>';
+  try {
+    const r = await apiFetch('/api/gifs?q=' + encodeURIComponent(query) + '&limit=12');
+    if (!r.data || !r.data.length) { grid.innerHTML = '<div class="gif-loading">No GIFs found 😕</div>'; return; }
+    grid.innerHTML = r.data.map(g => {
+      const url = g.images?.fixed_height_small?.url || g.images?.downsized?.url || '';
+      return `<div class="gif-item" onclick="sendGif('${esc(url)}')"><img src="${esc(url)}" alt="${esc(g.title)}" loading="lazy"/></div>`;
+    }).join('');
+  } catch {
+    grid.innerHTML = '<div class="gif-loading">⚠️ Add your Giphy API key in .env (GIPHY_KEY). Free at <a href="https://developers.giphy.com" target="_blank" style="color:var(--acc)">giphy.com</a></div>';
+  }
+}
+
+function gifSearchDebounce(val) {
+  clearTimeout(gifTimer); gifTimer = setTimeout(() => loadGifs(val), 600);
+}
+
+function sendGif(url) {
+  document.getElementById('epick').classList.remove('open');
+  send('gif', url);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════════════════════════
+const PAL = [
+  {bg:'rgba(91,82,240,.22)',c:'#8b84f5'},{bg:'rgba(0,210,150,.15)',c:'#22c990'},
+  {bg:'rgba(255,107,157,.2)',c:'#ff6b9d'},{bg:'rgba(255,210,60,.18)',c:'#ffd23c'},
+  {bg:'rgba(78,205,196,.18)',c:'#4ecdc4'},{bg:'rgba(167,139,250,.2)',c:'#a78bfa'},
+  {bg:'rgba(255,170,50,.18)',c:'#ffaa32'},{bg:'rgba(100,200,100,.18)',c:'#64c864'},
+];
+const PM = {};
+function pal(s) { if (!PM[s]) { let h=0; for (let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0; PM[s]=PAL[h%PAL.length]; } return PM[s]; }
+function ini(n) { return (n||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)||'?'; }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function ago(ts) { if (!ts) return ''; const d=(Date.now()/1000-ts); if(d<10) return 'now'; if(d<60) return Math.floor(d)+'s'; if(d<3600) return Math.floor(d/60)+'m'; if(d<86400) return Math.floor(d/3600)+'h'; return Math.floor(d/86400)+'d'; }
+function san(el) { el.value = el.value.toLowerCase().replace(/[^a-z0-9_]/g,''); }
+function ekey(e) { if (e.key === 'Enter') doAuth(); }
+function emptyHTML() { return '<div class="empty-ca"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:52px;height:52px;color:rgba(91,82,240,.3)"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><h3>Welcome to Zappo ⚡</h3><p>Messages reach any device, any browser, anywhere.</p><button class="ebtn" onclick="openNC()">+ Start a chat</button></div>'; }
+function emptyTop() { return '<div style="flex:1;display:flex;align-items:center;gap:10px;color:var(--mu);font-size:13px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(91,82,240,0.4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Select or start a chat</div>'; }
+
+function copyMe() {
+  if (!ME) return;
+  navigator.clipboard.writeText(ME.username).then(() => showToast('📋 Username @' + ME.username + ' copied!')).catch(() => showToast('Your username: @' + ME.username));
+}
+
+function showToast(msg, err=false) {
+  const el = document.getElementById('toastEl'); el.textContent = msg; el.classList.toggle('err', err); el.classList.add('show');
+  if (toastTmr) clearTimeout(toastTmr); toastTmr = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+async function apiFetch(url, method='GET', body=null) {
+  const opts = { method, headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(API + url, opts);
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || 'Request failed');
+  return d;
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.emj') && !e.target.closest('.epick')) document.getElementById('epick').classList.remove('open');
+});
+
+// Auto-login if token exists
+window.addEventListener('DOMContentLoaded', async () => {
+  if (token && ME) {
+    try { const u = await apiFetch('/api/me'); ME = u; localStorage.setItem('zp_me', JSON.stringify(u)); enterApp(); }
+    catch { localStorage.removeItem('zp_token'); localStorage.removeItem('zp_me'); }
+  }
+});
+</script>
+</body>
+</html>
