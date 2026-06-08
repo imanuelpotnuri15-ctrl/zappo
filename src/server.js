@@ -16,7 +16,7 @@ const server = http.createServer(app);
 const io     = new Server(server, { cors: { origin: '*' } });
 
 const JWT_SECRET = process.env.JWT_SECRET || 'zappo-secret-change-in-prod';
-const PORT       = process.env.PORT || 8080;
+const PORT       = process.env.PORT || 3000;
 
 // ── DATABASE ──────────────────────────────────────────────────
 const db = new Database(path.join(__dirname, '../zappo.db'));
@@ -58,7 +58,7 @@ db.exec(`
 app.use(cors());
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, '../public')));
 
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200 });
 const authLim = rateLimit({ windowMs: 15 * 60 * 1000, max: 20,
