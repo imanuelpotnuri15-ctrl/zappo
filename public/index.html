@@ -455,7 +455,7 @@ img{display:block;max-width:100%}
   <div class="modal">
     <div class="mh"><h3 id="qrTitle">Join Group</h3><button class="mclose" onclick="closeQR()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
     <div class="qr-wrap">
-      <canvas id="qrCanvas"></canvas>
+      <img id="qrImg" style="width:220px;height:220px;border-radius:8px;background:#fff;" />
       <div class="qr-label">Share this QR code with others.<br/>They scan it to join the group.</div>
     </div>
     <button class="mbtn" onclick="copyQRLink()">Copy Join Link</button>
@@ -991,7 +991,7 @@ function showGroupQR(convId,name){
   document.getElementById('qrTitle').textContent=name+' — QR Code';
   document.getElementById('qrOv').classList.remove('off');
   const joinUrl=window.location.origin+'?join='+convId;
-  QRCode.toCanvas(document.getElementById('qrCanvas'),joinUrl,{width:220,color:{dark:'#5b52f0',light:'#13131b'}},()=>{});
+  document.getElementById('qrImg').src='https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='+encodeURIComponent(joinUrl);
   window._qrJoinUrl=joinUrl;
 }
 function closeQR(){document.getElementById('qrOv').classList.add('off');}
