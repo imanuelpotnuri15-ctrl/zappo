@@ -767,7 +767,7 @@ function appendMsg(m,scroll=true){
     bub.className='bub '+(isMe?'out':'in');
     let replyHTML='';
     if(m.reply_to_content) replyHTML=`<div class="reply-preview"><b>${esc(m.reply_to_name||'')}</b><br/>${esc(m.reply_to_content.slice(0,60))}</div>`;
-    bub.innerHTML=`${replyHTML}<div class="msg-text">${esc(m.content||'')}</div><div class="bm"><span>${ts}</span><span class="edited-tag">${m.edited?'(edited)':''}</span>${isMe?tick:''}</div>`;
+    bub.innerHTML=`${replyHTML}<div class="msg-text">${linkify(m.content||'')}</div><div class="bm"><span>${ts}</span><span class="edited-tag">${m.edited?'(edited)':''}</span>${isMe?tick:''}</div>`;
   }
 
   // Right-click context menu
@@ -1040,6 +1040,7 @@ const CM={};
 function pal(s){if(!CM[s]){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;CM[s]=PAL[h%PAL.length];}return CM[s];}
 function ini(n){return(n||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)||'?';}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function linkify(s){return esc(s).replace(/(https?:\/\/[^\s]+)/g,'<a href="$1" target="_blank" style="color:inherit;text-decoration:underline;word-break:break-all;">$1</a>');}
 function ago(ts){if(!ts)return'';const d=(Date.now()/1000-ts);if(d<10)return'now';if(d<60)return Math.floor(d)+'s';if(d<3600)return Math.floor(d/60)+'m';if(d<86400)return Math.floor(d/3600)+'h';return Math.floor(d/86400)+'d';}
 function san(el){el.value=el.value.toLowerCase().replace(/[^a-z0-9_]/g,'');}
 function ekey(e){if(e.key==='Enter')doAuth();}
