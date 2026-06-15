@@ -119,6 +119,13 @@ img{display:block;max-width:100%}
 .mr{display:flex;align-items:flex-end;gap:6px;animation:fu .18s ease;position:relative}
 .mr.out{flex-direction:row-reverse}
 .mr.selected .bub{outline:2px solid var(--acc)}
+.msgs.select-mode .mr{padding-right:30px;position:relative}
+.msgs.select-mode .mr.out{padding-right:0;padding-left:30px}
+.sel-circle{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:18px;height:18px;border-radius:50%;border:2px solid var(--mu);display:none}
+.msgs.select-mode .mr.out .sel-circle{left:4px;right:auto}
+.msgs.select-mode .sel-circle{display:block}
+.mr.selected .sel-circle{background:var(--acc);border-color:var(--acc)}
+.mr.selected .sel-circle::after{content:'✓';color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;height:100%}
 @keyframes fu{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 .mav2{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;flex-shrink:0}
 .bub{max-width:60%;padding:8px 12px;border-radius:14px;font-size:13px;line-height:1.6;word-break:break-word;cursor:pointer;user-select:none;position:relative}
@@ -780,7 +787,9 @@ function appendMsg(m,scroll=true){
   // Click in select mode
   bub.addEventListener('click',()=>{if(selectMode)toggleSelect(row,m.id);});
 
-  row.appendChild(bub);con.appendChild(row);
+  row.appendChild(bub);
+  const circ=document.createElement('div');circ.className='sel-circle';row.appendChild(circ);
+  con.appendChild(row);
   if(scroll) con.scrollTop=99999;
 }
 
@@ -867,12 +876,14 @@ async function deleteMsg(id,scope){
 // ── SELECT MODE ───────────────────────────────────────────────────────────────
 function enterSelectMode(firstId){
   selectMode=true;selectedMsgs.clear();
+  document.getElementById('msgs').classList.add('select-mode');
   document.getElementById('selectBar').classList.add('show');
   if(firstId){const row=document.querySelector(`[data-msgid="${firstId}"]`);if(row){row.classList.add('selected');selectedMsgs.add(firstId);}}
   updateSelCount();
 }
 function exitSelectMode(){
   selectMode=false;selectedMsgs.clear();
+  document.getElementById('msgs').classList.remove('select-mode');
   document.querySelectorAll('.mr.selected').forEach(r=>r.classList.remove('selected'));
   document.getElementById('selectBar').classList.remove('show');
 }
