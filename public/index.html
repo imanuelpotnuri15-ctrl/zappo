@@ -567,9 +567,9 @@ function connectSocket(){
     } else { loadConvs(); }
     renderList();
     if(activeConv?.id===msg.conv_id) appendMsg(msg);
-    else if(msg.sender_id!==ME.id){
+    if(msg.sender_id!==ME.id){
       const preview=msg.type==='gif'?'🎞️ GIF':msg.type==='sticker'?'🎭 Sticker':msg.type==='image'?'🖼️ Image':msg.content.slice(0,50);
-      showToast('💬 '+msg.sender_name+': '+preview);
+      if(activeConv?.id!==msg.conv_id) showToast('💬 '+msg.sender_name+': '+preview);
       notifyInApp(msg.sender_name, preview);
     }
   });
