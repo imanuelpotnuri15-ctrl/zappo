@@ -1121,7 +1121,7 @@ function urlBase64ToUint8Array(base64String){
 // Show browser notification when tab is not visible
 function notifyInApp(title, body){
   if(document.visibilityState==='hidden'&&Notification.permission==='granted'){
-    new Notification(title,{body,icon:'/icon.svg',tag:'zappo'});
+    new Notification(title,{body,icon:'/icon.svg',tag:'zappo-'+Date.now()});
   }
 }
 </script>
