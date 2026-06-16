@@ -735,9 +735,28 @@ function renderTopbar(c){
       ${isGroup?`<button class="ib" title="Show QR code" onclick="showGroupQR('${c.id}','${esc(name)}')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="3" y="5" width="3" height="3" fill="currentColor"/><rect x="14" y="5" width="3" height="3" fill="currentColor"/><rect x="3" y="16" width="3" height="3" fill="currentColor"/><line x1="14" y1="14" x2="17" y2="14"/><line x1="17" y1="14" x2="17" y2="17"/><line x1="17" y1="17" x2="20" y2="17"/><line x1="20" y1="14" x2="20" y2="17"/><line x1="14" y1="17" x2="14" y2="21"/><line x1="14" y1="21" x2="17" y2="21"/><line x1="20" y1="19" x2="20" y2="21"/></svg>
       </button>`:''}
-      <button class="ib" title="More options" onclick="showToast('More options coming soon!')">
+      <button class="ib" title="More options" onclick="toggleMoreMenu(event)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
       </button>
+      <div class="ctx-menu hidden" id="moreMenu" style="top:58px;right:8px;">
+        <div class="ctx-item" onclick="toggleTheme();closeMoreMenu()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <span id="themeLabel">☀️ Light mode</span>
+        </div>
+        <div class="ctx-item" onclick="muteCurrent();closeMoreMenu()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          <span id="muteLabel">🔇 Mute chat</span>
+        </div>
+        <div class="ctx-item" onclick="copyChatUser();closeMoreMenu()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy their username
+        </div>
+        <div class="ctx-divider"></div>
+        <div class="ctx-item danger" onclick="clearChat();closeMoreMenu()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          🗑️ Clear chat (for me)
+        </div>
+      </div>
     </div>`;
 }
 
@@ -787,9 +806,11 @@ function appendMsg(m,scroll=true){
   // Click in select mode
   bub.addEventListener('click',()=>{if(selectMode)toggleSelect(row,m.id);});
 
-  row.appendChild(bub);
-  const circ=document.createElement('div');circ.className='sel-circle';row.appendChild(circ);
-  con.appendChild(row);
+  const circ=document.createElement('div');circ.className='sel-circle';
+  circ.addEventListener('click',()=>{if(selectMode)toggleSelect(row,m.id);});
+  row.appendChild(bub);row.appendChild(circ);
+  // Also click anywhere on row in select mode
+  row.addEventListener('click',()=>{if(selectMode)toggleSelect(row,m.id);});
   if(scroll) con.scrollTop=99999;
 }
 
@@ -1060,6 +1081,52 @@ function emptyTop(){return'<div style="flex:1;display:flex;align-items:center;ga
 function copyMe(){if(!ME)return;navigator.clipboard.writeText(ME.username).then(()=>showToast('📋 Username @'+ME.username+' copied!')).catch(()=>showToast('Your username: @'+ME.username));}
 function showToast(msg,err=false){const el=document.getElementById('toastEl');el.textContent=msg;el.classList.toggle('err',err);el.classList.add('show');if(toastTmr)clearTimeout(toastTmr);toastTmr=setTimeout(()=>el.classList.remove('show'),3000);}
 async function apiFetch(url,method='GET',body=null){const opts={method,headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}};if(body)opts.body=JSON.stringify(body);const r=await fetch(API+url,opts);const d=await r.json();if(!r.ok)throw new Error(d.error||'Request failed');return d;}
+
+// ── MORE MENU ─────────────────────────────────────────────────────────────────
+function toggleMoreMenu(e){e.stopPropagation();const m=document.getElementById('moreMenu');m.classList.toggle('hidden');}
+function closeMoreMenu(){document.getElementById('moreMenu').classList.add('hidden');}
+
+let darkMode=true;
+function toggleTheme(){
+  darkMode=!darkMode;
+  const r=document.documentElement.style;
+  if(!darkMode){
+    r.setProperty('--bg','#f0f2f5');r.setProperty('--sb','#ffffff');r.setProperty('--surf','#f0f2f5');
+    r.setProperty('--surf2','#e4e6eb');r.setProperty('--tx','#1c1e21');r.setProperty('--mu','rgba(0,0,0,0.5)');
+    r.setProperty('--mu2','rgba(0,0,0,0.3)');r.setProperty('--b1','rgba(0,0,0,0.1)');r.setProperty('--b2','rgba(0,0,0,0.15)');
+    document.getElementById('themeLabel').textContent='🌙 Dark mode';
+  } else {
+    r.setProperty('--bg','#0c0c12');r.setProperty('--sb','#13131b');r.setProperty('--surf','#1c1c26');
+    r.setProperty('--surf2','#24242f');r.setProperty('--tx','#eeedf8');r.setProperty('--mu','rgba(238,237,248,.45)');
+    r.setProperty('--mu2','rgba(238,237,248,.22)');r.setProperty('--b1','rgba(255,255,255,.07)');r.setProperty('--b2','rgba(255,255,255,.13)');
+    document.getElementById('themeLabel').textContent='☀️ Light mode';
+  }
+}
+
+const mutedChats=new Set();
+function muteCurrent(){
+  if(!activeConv)return;
+  if(mutedChats.has(activeConv.id)){mutedChats.delete(activeConv.id);showToast('🔔 Chat unmuted');document.getElementById('muteLabel').textContent='🔇 Mute chat';}
+  else{mutedChats.add(activeConv.id);showToast('🔇 Chat muted');document.getElementById('muteLabel').textContent='🔔 Unmute chat';}
+}
+
+function copyChatUser(){
+  if(!activeConv)return;
+  const name=activeConv.is_group?activeConv.name:activeConv.other?.username;
+  navigator.clipboard.writeText(name||'').then(()=>showToast('📋 Copied: @'+name));
+}
+
+async function clearChat(){
+  if(!activeConv)return;
+  if(!confirm('Clear all messages in this chat (for you only)?'))return;
+  const msgs=document.querySelectorAll('#msgs .mr');
+  for(const row of msgs){
+    const id=row.getAttribute('data-msgid');
+    if(id) await apiFetch(`/api/messages/${id}`,'DELETE',{scope:'me',conv_id:activeConv.id}).catch(()=>{});
+  }
+  document.getElementById('msgs').innerHTML='<div class="dlbl">Chat cleared</div>';
+  showToast('🗑️ Chat cleared');
+}
 
 document.addEventListener('click',e=>{
   if(!e.target.closest('.emj')&&!e.target.closest('.epick')) document.getElementById('epick').classList.remove('open');
